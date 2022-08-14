@@ -1,5 +1,5 @@
-from tkinter import (Tk, Label, Entry, Button, Canvas, PhotoImage)
-from tkinter import messagebox, END
+from tkinter import (Tk, Entry, Canvas, PhotoImage, ttk)
+from tkinter import messagebox, END, LEFT
 from password_gen import generate_password
 import json
 import platform
@@ -10,7 +10,7 @@ print(platform)
 # CONSTANTS
 WHITE = "#FBFCFC"
 LABEL_FONT = ("Verdana", 11, "normal")
-BUTTON_FONT = ("Verdana", 9, "normal")
+BUTTON_FONT = ("Verdana", 12, "normal")
 PSWD_FILE = "passwords.json"
 
 
@@ -32,14 +32,18 @@ def create_password():
     window.clipboard_append(new_password)
     window.update()
 
+
 # Open file function
 def open_file(filename: str, method: str) -> object:
     try:
         data_file = open(filename, method)
     except FileNotFoundError:
-        data_file = open(filename, method)
+        data_file = open(filename, "w")
+        data_file.close()
+        data_file = open_file(filename, method)
 
     return data_file
+
 
 # Get JSON data function
 def get_json_data(json_file: object) -> dict:
@@ -82,9 +86,13 @@ def save_password():
     password_entry.delete(0, END)
     data_file.close()
 
+
 # ------------------------------- SEARCH ----------------------------------- #
 def search():
+
     website = website_entry.get().casefold()
+    if len(website) == 0:
+        return
 
     data_file = open_file(PSWD_FILE, "r")
     data = get_json_data(data_file)
@@ -97,27 +105,24 @@ def search():
     if website in data:
         email = data[website]["email"]
         password = data[website]["password"]
+        messagebox.showinfo(title=f"Results for {website}",
+                            message=f"username: {email}\npassword: {password}")
+        window.clipboard_clear()
+        window.clipboard_append(password)
+        window.update()
 
-        website_entry.delete(0, END)
-        website_entry.insert(0, website.title())
-
-        password_entry.delete(0, END)
-        password_entry.insert(0, password)
-
-        email_entry.delete(0, END)
-        email_entry.insert(0, email)
     else:
-        password_entry.delete(0, END)
         messagebox.showinfo(title="Not Found", message=f"{website.title()} not found.")
+
 
 # ------------------------------ UI SETUP ---------------------------------- #
 # Window
 window = Tk()
 window.title("Password Manager")
-window.config(padx=20, pady=20, background=WHITE)
+window.config(padx=20, pady=20)
 
 # Canvas
-canvas = Canvas(window, width=200, height=200, background=WHITE,
+canvas = Canvas(window, width=200, height=200,
                 highlightthickness=0, relief="ridge")
 canvas.grid(row=1, column=2, sticky="w")
 
@@ -126,40 +131,48 @@ bg_image = PhotoImage(file="logo.png")
 bg = canvas.create_image(100, 100, image=bg_image)
 
 # Labels
-website_label = Label(window, text="Website: ", background=WHITE,
-                      font=LABEL_FONT)
-email_label = Label(window, text="Email/Username: ", background=WHITE,
-                    font=LABEL_FONT)
-password_label = Label(window, text="Password: ", background=WHITE,
-                       font=LABEL_FONT)
+label_style = ttk.Style()
+# label_style.configure("TLabel", background=WHITE, font=LABEL_FONT)
+# print(label_style.layout("TLabel"))
+# print(label_style.element_options("TLabel.label"))
+
+website_label = ttk.Label(window, text="Website: ", style="TLabel")
+email_label = ttk.Label(window, text="Email/Username: ", style="TLabel")
+password_label = ttk.Label(window, text="Password: ", style="TLabel")
 
 website_label.grid(row=2, column=1, sticky="e")
 email_label.grid(row=3, column=1, sticky="e")
 password_label.grid(row=4, column=1, sticky="e")
 
 # Inputs
-website_entry = Entry(window, width=35)
+website_entry = Entry(window, width=21)
 website_entry.focus()
-email_entry = Entry(window, width=57)
+email_entry = Entry(window, width=21)
 email_entry.insert(0, "rjmartin73@outlook.com")
-password_entry = Entry(window, width=30)
+password_entry = Entry(window, width=21)
 
 website_entry.grid(row=2, column=2, columnspan=2, sticky="w", pady=2)
 email_entry.grid(row=3, column=2, columnspan=2, sticky="w", pady=2)
 password_entry.grid(row=4, column=2, sticky="w", pady=2)
 
+button_style = ttk.Style()
+button_style.theme_use("aqua")
+button_style.configure("TButton", foreground="black", background=WHITE,
+                       relief="raised", font=BUTTON_FONT)
+# print(str(button_style.theme_names()))
 # Buttons
-add_button = Button(window, text="Add", width=42, pady=2, background=WHITE,
-                    font=BUTTON_FONT, command=lambda: save_password())
-gen_pswd_button = Button(window, text="Generate Password", pady=2,
-                         background=WHITE, font=BUTTON_FONT,
-                         command=lambda: create_password())
-search_button = Button(window, text="Search", background=WHITE, width=15,
-                       font=BUTTON_FONT, command=lambda: search())
+add_btn_image = PhotoImage(file="icons8-add-48 (1).png")
+add_btn_image_sm = add_btn_image.subsample(3, 3)
+add_button = ttk.Button(window, text="Add", width=40, image=add_btn_image_sm,
+                        compound=LEFT, command=lambda: save_password())
+gen_pswd_button = ttk.Button(window, text="Generate Password", command=lambda: create_password())
+search_button = ttk.Button(window, text="Search", style="TButton",
+                           command=lambda: search())
+
 
 add_button.grid(row=5, column=2, columnspan=2, sticky="w")
-gen_pswd_button.grid(row=4, column=3, sticky="e")
-search_button.grid(row=2, column=3, sticky="e")
+gen_pswd_button.grid(row=4, column=3, sticky="w")
+search_button.grid(row=2, column=3, sticky="w")
 
 if __name__ == '__main__':
     window.mainloop()
