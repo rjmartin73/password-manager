@@ -2,6 +2,9 @@ from tkinter import (Tk, Label, Entry, Button, Canvas, PhotoImage)
 from tkinter import messagebox, END
 from password_gen import generate_password
 import json
+import platform
+platform = platform.platform()
+print(platform)
 
 
 # CONSTANTS
